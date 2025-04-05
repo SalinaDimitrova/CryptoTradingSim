@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/cryptocurrencies")
 public class ApiController {
 
     private final KrakenMarketDataService krakenMarketDataService;
@@ -19,7 +19,7 @@ public class ApiController {
     }
 
     // Endpoint to fetch top 20 cryptos
-    @GetMapping("/top-cryptos")
+    @GetMapping("/top-20")
     public List<String> getTopCryptos() {
         return krakenMarketDataService.getTopTradingPairs(20);  // Fetch the top 20 trading pairs
     }

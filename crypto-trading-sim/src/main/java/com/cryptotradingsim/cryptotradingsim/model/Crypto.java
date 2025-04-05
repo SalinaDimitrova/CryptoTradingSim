@@ -1,10 +1,12 @@
 package com.cryptotradingsim.cryptotradingsim.model;
 
+import java.math.BigDecimal;
+
 public record Crypto (
         String name,
         String symbol,
-        double price,
-        double volume
+        BigDecimal price,
+        double quantity
 ){}
 
 

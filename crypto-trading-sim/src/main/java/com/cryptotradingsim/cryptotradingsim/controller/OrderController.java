@@ -23,7 +23,7 @@ public class OrderController {
         return orderService.getAllOrders();
     }
 
-    @GetMapping("/account/{accountId}")
+    @GetMapping("/accounts/{accountId}")
     public List<Order> getOrdersByAccount(@PathVariable long accountId) {
         return orderService.getOrdersByAccountId(accountId);
     }
@@ -31,11 +31,11 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<String> placeOrder(@RequestBody Order order) {
         orderService.placeOrder(
-                order.getAccountId(),
-                order.getType(),
-                order.getSymbol(),
-                order.getQuantity(),
-                order.getPrice()
+                order.accountId(),
+                order.type(),
+                order.symbol(),
+                order.quantity(),
+                order.price()
         );
         return ResponseEntity.status(HttpStatus.CREATED).body("Order placed successfully");
     }
