@@ -1,45 +1,55 @@
+// pages/Portfolio.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const Portfolio = () => {
   const [portfolio, setPortfolio] = useState([]);
+  const [prices, setPrices] = useState({});
 
   useEffect(() => {
     axios.get('/api/portfolio')
-      .then((response) => setPortfolio(response.data))
-      .catch((error) => console.error("Error fetching portfolio data:", error));
+      .then((res) => setPortfolio(res.data))
+      .catch((err) => console.error("Error loading portfolio:", err));
   }, []);
 
-  const totalBalance = portfolio.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+  useEffect(() => {
+    if (portfolio.length > 0) {
+      const symbols = portfolio.map(asset => asset.symbol).join(',');
+      axios.get(`/api/kraken-prices?symbols=${symbols}`)
+        .then(res => setPrices(res.data))
+        .catch(err => console.error("Error loading prices:", err));
+    }
+  }, [portfolio]);
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4">
-      <h2 className="text-3xl font-semibold text-center text-gray-900 my-6">Your Portfolio</h2>
-      <h3 className="text-xl font-semibold text-right mb-4">Balance: ${totalBalance.toFixed(2)}</h3>
+    <section className="pt-28 pb-20 bg-gray-950 text-white min-h-screen px-4">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold mb-4 text-center">📊 Your Portfolio</h1>
 
-      <div className="overflow-x-auto shadow-lg rounded-lg bg-white">
-        <table className="min-w-full text-sm text-left text-gray-700">
-          <thead className="bg-blue-500 text-white">
-            <tr>
-              <th className="px-6 py-3">Symbol</th>
-              <th className="px-6 py-3">Quantity</th>
-              <th className="px-6 py-3">Price</th>
-              <th className="px-6 py-3">Total Value</th>
-            </tr>
-          </thead>
-          <tbody className="bg-gray-50">
-            {portfolio.map((holding, index) => (
-              <tr key={index} className="hover:bg-gray-100">
-                <td className="px-6 py-4">{holding.symbol}</td>
-                <td className="px-6 py-4">{holding.quantity}</td>
-                <td className="px-6 py-4">${holding.price.toFixed(2)}</td>
-                <td className="px-6 py-4">${(holding.quantity * holding.price).toFixed(2)}</td>
+        <div className="overflow-x-auto bg-white text-gray-800 rounded-lg shadow-lg">
+          <table className="min-w-full text-sm text-left">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="px-6 py-3">Symbol</th>
+                <th className="px-6 py-3">Quantity</th>
+                <th className="px-6 py-3">Current Price</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-gray-50">
+              {portfolio.map((asset, idx) => (
+                <tr key={idx} className="hover:bg-gray-100 transition">
+                  <td className="px-6 py-4">{asset.symbol}</td>
+                  <td className="px-6 py-4">{asset.quantity}</td>
+                  <td className="px-6 py-4">
+                    {prices[asset.symbol] ? `$${prices[asset.symbol].toFixed(2)}` : 'Loading...'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 
