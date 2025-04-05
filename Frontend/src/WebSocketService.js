@@ -16,11 +16,13 @@ const WebSocketService = () => {
             },
             onConnect: () => {
                 // Once connected, subscribe to price updates for the selected crypto symbol
-                client.subscribe(`/topic/price-update/${cryptoSymbol}`, (message) => {
-                    console.log("Received message:", message.body);
+                const topic = `/topic/price-update/`;  // Dynamic topic based on symbol
+                client.subscribe(topic, (message) => {
+                    const updatedPrice = JSON.parse(message.body);  // Parse the incoming message
+                    console.log("Received price update", updatedPrice)
                     setPrices((prevPrices) => ({
                         ...prevPrices,
-                        [cryptoSymbol]: message.body, // Update price for the selected crypto symbol
+                        [cryptoSymbol]: updatedPrice,  // Update price for the selected crypto symbol
                     }));
                 });
             },

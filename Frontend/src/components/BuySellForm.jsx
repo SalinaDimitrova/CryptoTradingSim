@@ -1,97 +1,126 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Client } from '@stomp/stompjs'; // Import STOMP client
+import SockJS from 'sockjs-client'; // Import SockJS
 
 const BuySellForm = ({ onOrderPlaced }) => {
-  const [formData, setFormData] = useState({
-    type: "BUY",
-    symbol: "",
-    quantity: "",
-    price: "",
-  });
+    const [cryptoSymbol, setCryptoSymbol] = useState('');
+    const [quantity, setQuantity] = useState('');
+    const [price, setPrice] = useState('');
+    const [orderType, setOrderType] = useState('BUY');
+    const [status, setStatus] = useState('');
+    const [receivedPrice, setReceivedPrice] = useState(null); // State to store the received price
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
+    useEffect(() => {
+        // Establish WebSocket connection when the component is mounted
+        const socket = new SockJS('http://localhost:8080/ws'); // Replace with your WebSocket URL
+        const stompClient = new Client({
+            webSocketFactory: () => socket,
+            onConnect: () => {
+                console.log('Connected to WebSocket');
+                // Subscribe to the price updates topic
+                stompClient.subscribe('/topic/prices', (message) => {
+                    const updatedPrice = JSON.parse(message.body);
+                    setReceivedPrice(updatedPrice);
+                    console.log('Received price update:', updatedPrice);
+                });
+            },
+            onStompError: (frame) => {
+                console.error('Error connecting to WebSocket:', frame);
+            },
+        });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+        stompClient.activate(); // Start the WebSocket connection
 
-    const payload = {
-        accountId: 1,
-        type: formData.type, // ✅ this must be 'BUY' or 'SELL'
-        symbol: formData.symbol.toUpperCase(),
-        quantity: parseFloat(formData.quantity),
-        price: parseFloat(formData.price),
-      };
-      
-    console.log("Submitting order:", payload);
-    
-    try {
-      await axios.post("/orders", payload);
-      alert("Order placed successfully!");
+        // Cleanup on component unmount
+        return () => {
+            stompClient.deactivate();
+        };
+    }, []);
 
-      // Let parent refresh the order list
-      if (onOrderPlaced) onOrderPlaced();
-    } catch (err) {
-      console.error("Failed to place order:", err);
-      alert("Failed to place order. Check console.");
-    }
-  };
+    const handleSubmit = (event) => {
+        event.preventDefault();
 
-  return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow-md mb-6 max-w-2xl mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Place an Order</h2>
-      <div className="grid grid-cols-2 gap-4 mb-4">
+        // Construct the order payload
+        const orderData = {
+            symbol: cryptoSymbol,
+            quantity: quantity,
+            price: price,
+            type: orderType,
+        };
+
+        // Send the order data to the backend
+        axios.post('/api/orders', orderData)
+            .then((response) => {
+                setStatus('Order placed successfully!');
+                onOrderPlaced(); // Trigger page refresh in parent
+            })
+            .catch((error) => {
+                setStatus('Error placing order. Please try again.');
+                console.error('Error placing order:', error);
+            });
+    };
+
+    return (
         <div>
-          <label className="block text-sm font-medium">Type</label>
-          <select name="type" value={formData.type} onChange={handleChange} className="w-full border rounded px-2 py-1">
-            <option value="BUY">BUY</option>
-            <option value="SELL">SELL</option>
-          </select>
+            <h3 className="text-xl font-semibold text-center my-6">Place an Order</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block">Crypto Symbol:</label>
+                    <input
+                        type="text"
+                        value={cryptoSymbol}
+                        onChange={(e) => setCryptoSymbol(e.target.value)}
+                        className="border px-4 py-2"
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block">Quantity:</label>
+                    <input
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="border px-4 py-2"
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block">Price (USD):</label>
+                    <input
+                        type="number"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        className="border px-4 py-2"
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block">Order Type:</label>
+                    <select
+                        value={orderType}
+                        onChange={(e) => setOrderType(e.target.value)}
+                        className="border px-4 py-2"
+                    >
+                        <option value="BUY">Buy</option>
+                        <option value="SELL">Sell</option>
+                    </select>
+                </div>
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-4">
+                    Place Order
+                </button>
+                {status && <p className="mt-2">{status}</p>}
+            </form>
+
+            {/* Display received price updates */}
+            {receivedPrice && (
+                <div className="mt-4">
+                    <h4 className="text-lg font-semibold">Latest Price Update</h4>
+                    <p>{receivedPrice.symbol}: {receivedPrice.price} USD</p>
+                </div>
+            )}
         </div>
-        <div>
-          <label className="block text-sm font-medium">Symbol</label>
-          <input
-            type="text"
-            name="symbol"
-            value={formData.symbol}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            placeholder="e.g. BTC"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Quantity</label>
-          <input
-            type="number"
-            name="quantity"
-            value={formData.quantity}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Price</label>
-          <input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            required
-          />
-        </div>
-      </div>
-      <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Submit Order
-      </button>
-    </form>
-  );
+    );
 };
 
 export default BuySellForm;
