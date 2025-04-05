@@ -1,22 +1,47 @@
-// pages/Home.jsx
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState, useRef } from 'react';
+import SockJS from 'sockjs-client';
+import { CompatClient, Stomp } from '@stomp/stompjs';
 import BuySellForm from '../components/BuySellForm';
 
+const demoAccountId = 1;
+
+const trackedSymbols = [
+  "BTC/USD", "ETH/USD", "BNB/USD", "XRP/USD", "ADA/USD",
+  "DOGE/USD", "SOL/USD", "DOT/USD", "MATIC/USD", "LTC/USD",
+  "SHIB/USD", "AVAX/USD", "UNI/USD", "XLM/USD", "BCH/USD",
+  "ALGO/USD", "VET/USD", "ICP/USD", "MANA/USD", "AXS/USD"
+];
+
 const Home = () => {
-  const [cryptos, setCryptos] = useState([]);
+  const [prices, setPrices] = useState({});
   const [selectedCrypto, setSelectedCrypto] = useState(null);
-  const [refreshFlag, setRefreshFlag] = useState(false);
+  const stompClientRef = useRef(/** @type {CompatClient | null} */(null));
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/top-cryptos')
-      .then((res) => setCryptos(res.data))
-      .catch((err) => console.error("Failed to fetch cryptos:", err));
-  }, [refreshFlag]);
+    const socket = new SockJS('http://localhost:8080/ws'); // Spring Boot WebSocket endpoint
+    const stompClient = Stomp.over(socket);
+    stompClientRef.current = stompClient;
 
-  const triggerRefresh = () => {
-    setRefreshFlag(!refreshFlag);
-    setSelectedCrypto(null);
+    stompClient.connect({}, () => {
+      stompClient.subscribe('/topic/prices', (message) => {
+
+        const data = JSON.parse(message.body);
+
+        if (data.symbol && data.last) {
+          const pair = data.symbol;
+          setPrices(prev => ({ ...prev, [pair]: parseFloat(data.last) }));
+        }
+      });
+    });
+
+    return () => {
+      stompClient.disconnect();
+    };
+  }, []);
+
+  const formatName = (pair) => {
+    const name = pair.split('/')[0];
+    return `${name} (${pair})`;
   };
 
   return (
@@ -27,6 +52,7 @@ const Home = () => {
       <p className="text-gray-400 text-lg mb-10 text-center max-w-2xl mx-auto">
         Start investing with real-time insights and no hidden fees.
       </p>
+
       <div className="text-center mb-10">
         <button
           onClick={() => document.getElementById('crypto-table')?.scrollIntoView({ behavior: 'smooth' })}
@@ -42,22 +68,28 @@ const Home = () => {
             <tr>
               <th className="px-6 py-3">Cryptocurrency</th>
               <th className="px-6 py-3">Price</th>
-              <th className="px-6 py-3">Volume (24h)</th>
             </tr>
           </thead>
           <tbody className="bg-gray-50">
-            {cryptos.map((crypto, index) => (
+            {trackedSymbols.map((pair, index) => (
               <tr
                 key={index}
                 className="hover:bg-indigo-100 cursor-pointer transition"
-                onClick={() => setSelectedCrypto(crypto)}
+                onClick={() => {
+                  const price = prices[pair];
+                  if (price) {
+                    setSelectedCrypto({
+                      symbol: pair,
+                      name: pair,
+                      price
+                    });
+                  }
+                }}
               >
-                <td className="px-6 py-4 flex items-center gap-2">
-                  <img src={`https://cryptoicons.org/api/icon/${crypto.symbol.toLowerCase()}/32`} alt={crypto.symbol} />
-                  {crypto.name} ({crypto.symbol})
+                <td className="px-6 py-4">{formatName(pair)}</td>
+                <td className="px-6 py-4">
+                  {prices[pair] ? `$${prices[pair].toFixed(2)}` : 'Loading...'}
                 </td>
-                <td className="px-6 py-4">${crypto.price.toFixed(2)}</td>
-                <td className="px-6 py-4">{crypto.volume.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -66,11 +98,12 @@ const Home = () => {
 
       {selectedCrypto && (
         <div className="bg-white p-6 rounded-lg shadow-lg text-gray-800">
-          <h3 className="text-xl font-semibold mb-4">📝 Order for {selectedCrypto.name} ({selectedCrypto.symbol})</h3>
+          <h3 className="text-xl font-semibold mb-4">📝 Order for {selectedCrypto.name}</h3>
           <BuySellForm
             symbol={selectedCrypto.symbol}
             price={selectedCrypto.price}
-            onOrderPlaced={triggerRefresh}
+            accountId={demoAccountId}
+            onOrderPlaced={() => setSelectedCrypto(null)}
           />
         </div>
       )}

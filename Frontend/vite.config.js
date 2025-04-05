@@ -6,8 +6,17 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/orders': 'http://localhost:8080',
-      '/api': 'http://localhost:8080'
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
+  },
+  define: {
+    global: 'window', // <--- Polyfill global
+  },
+  optimizeDeps: {
+    include: ['buffer', 'process'], // In case needed
   }
 });

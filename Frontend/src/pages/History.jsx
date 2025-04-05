@@ -6,7 +6,7 @@ const History = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/orders')
+    axios.get('/api/accounts/orders')
       .then((res) => setOrders(res.data))
       .catch((err) => console.error("Failed to load orders:", err));
   }, []);

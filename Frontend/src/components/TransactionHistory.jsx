@@ -5,7 +5,7 @@ const TransactionHistory = ({ refreshFlag }) => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios.get("/orders")
+    axios.get("/api/accounts/orders")
       .then(res => {
         console.log("Orders fetched:", res.data);
         setOrders(res.data);

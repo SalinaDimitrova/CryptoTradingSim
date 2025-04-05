@@ -7,7 +7,7 @@ const Portfolio = () => {
   const [prices, setPrices] = useState({});
 
   useEffect(() => {
-    axios.get('/api/portfolio')
+    axios.get('/api/portfolios')
       .then((res) => setPortfolio(res.data))
       .catch((err) => console.error("Error loading portfolio:", err));
   }, []);
