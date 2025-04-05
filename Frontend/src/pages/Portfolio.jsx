@@ -2,9 +2,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const demoAccountId = 1
+
 const Portfolio = () => {
   const [portfolio, setPortfolio] = useState([]);
   const [prices, setPrices] = useState({});
+  const [account, setAccount] = useState(null); // ← New state for account
 
   useEffect(() => {
     axios.get('/api/portfolios')
@@ -21,10 +24,21 @@ const Portfolio = () => {
     }
   }, [portfolio]);
 
+  useEffect(() => {
+    axios.get(`/api/accounts/${demoAccountId}`)
+      .then(res => setAccount(res.data))
+      .catch(err => console.error("Error loading account:", err));
+  }, []);
+
   return (
     <section className="pt-28 pb-20 bg-gray-950 text-white min-h-screen px-4">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-3xl font-bold mb-4 text-center">📊 Your Portfolio</h1>
+
+        {/* 👇 Show Account Balance */}
+        <div className="text-xl font-semibold text-center mb-6">
+          Account Balance: {account ? `$${account.balance.toFixed(2)}` : 'Loading...'}
+        </div>
 
         <div className="overflow-x-auto bg-white text-gray-800 rounded-lg shadow-lg">
           <table className="min-w-full text-sm text-left">

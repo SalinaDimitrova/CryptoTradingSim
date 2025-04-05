@@ -51,8 +51,8 @@ const BuySellForm = ({ symbol, price, accountId, onOrderPlaced }) => {
         onChange={(e) => setType(e.target.value)}
         className="w-full px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-800"
       >
-        <option>Buy</option>
-        <option>Sell</option>
+         <option value="BUY">BUY</option>
+         <option value="SELL">SELL</option>
       </select>
 
       <button

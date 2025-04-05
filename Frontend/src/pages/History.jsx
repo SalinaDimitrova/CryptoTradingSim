@@ -41,7 +41,7 @@ const History = () => {
             <tbody className="bg-gray-50">
               {orders.map((o, i) => {
                 const total = o.quantity * o.price;
-                const pl = o.type === 'Sell' ? o.profitLoss : null;
+                const pl = o.type === 'SELL' ? o.profitLoss : null;
 
                 return (
                   <tr key={i} className="hover:bg-gray-100 transition">
