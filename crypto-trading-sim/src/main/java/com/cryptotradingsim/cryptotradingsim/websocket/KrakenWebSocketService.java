@@ -1,8 +1,6 @@
 package com.cryptotradingsim.cryptotradingsim.websocket;
 
-import com.cryptotradingsim.cryptotradingsim.model.CryptoPrice;
 import com.cryptotradingsim.cryptotradingsim.model.WebSocketMessage;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -14,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,7 +80,7 @@ public class KrakenWebSocketService {
                                     BigDecimal.ZERO.compareTo(priceUpdate.price()) < 0)
                     .forEach(data -> {
                         cryptoPrices.put(data.symbol(), data.price());
-                        broadcastService.broadcastPriceUpdate(data);
+                        broadcastService.broadcastPrices(cryptoPrices);
                     });
 
         } catch (Exception e) {

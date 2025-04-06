@@ -1,10 +1,12 @@
 package com.cryptotradingsim.cryptotradingsim.repository;
 
 import com.cryptotradingsim.cryptotradingsim.model.Portfolio;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class PortfolioRepository {
@@ -24,13 +26,19 @@ public class PortfolioRepository {
         ));
     }
 
-    public Portfolio findBySymbol(String symbol) {
+    public Optional<Portfolio> findBySymbol(String symbol) {
         String sql = "SELECT * FROM portfolio WHERE symbol = ?";
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Portfolio(
-                rs.getInt("id"),
-                rs.getString("symbol"),
-                rs.getBigDecimal("quantity")
-        ), symbol);
+        try {
+            Portfolio portfolio = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Portfolio(
+                    rs.getInt("id"),
+                    rs.getString("symbol"),
+                    rs.getBigDecimal("quantity")
+            ), symbol);
+
+            return Optional.ofNullable(portfolio);
+        }catch (EmptyResultDataAccessException e){
+            return Optional.empty();
+        }
     }
 
     public void updateHolding(String symbol, double quantity) {
@@ -38,13 +46,18 @@ public class PortfolioRepository {
         jdbcTemplate.update(sql, quantity, symbol);
     }
 
-    public void insertHolding(String symbol, double quantity) {
-        String sql = "INSERT INTO portfolio (symbol, quantity) VALUES (?, ?)";
-        jdbcTemplate.update(sql, symbol, quantity);
+    public void insertHolding(long accountId, String symbol, double quantity) {
+        String sql = "INSERT INTO portfolio (account_id, symbol, quantity) VALUES (?, ?, ?)";
+        jdbcTemplate.update(sql, accountId, symbol, quantity);
     }
 
     public void deleteHolding(String symbol) {
         String sql = "DELETE FROM portfolio WHERE symbol = ?";
         jdbcTemplate.update(sql, symbol);
+    }
+
+    public void deleteAllHoldingsByAccountId(long accountId) {
+        String sql = "DELETE FROM portfolio WHERE account_id = ?";
+        jdbcTemplate.update(sql, accountId);
     }
 }

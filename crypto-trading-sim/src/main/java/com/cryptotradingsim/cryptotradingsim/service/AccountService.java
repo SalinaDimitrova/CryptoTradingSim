@@ -2,6 +2,8 @@ package com.cryptotradingsim.cryptotradingsim.service;
 
 import com.cryptotradingsim.cryptotradingsim.model.Account;
 import com.cryptotradingsim.cryptotradingsim.repository.AccountRepository;
+import com.cryptotradingsim.cryptotradingsim.repository.OrderRepository;
+import com.cryptotradingsim.cryptotradingsim.repository.PortfolioRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -10,9 +12,15 @@ import java.math.BigDecimal;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final OrderRepository orderRepository;
+    private final PortfolioRepository portfolioRepository;
 
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository,
+                          OrderRepository orderRepository,
+                          PortfolioRepository portfolioRepository) {
         this.accountRepository = accountRepository;
+        this.orderRepository = orderRepository;
+        this.portfolioRepository = portfolioRepository;
     }
 
     public Account getAccount(long accountId) {
@@ -24,9 +32,12 @@ public class AccountService {
     }
 
     public void resetAccount(long accountId) {
-        accountRepository.resetAccount( accountId,
-                new BigDecimal("10000.00"),
-                "USD"
-        );
+        // Delete orders and holdings first
+        orderRepository.deleteOrdersByAccountId(accountId);
+        portfolioRepository.deleteAllHoldingsByAccountId(accountId);
+
+        // Reset balance and currency
+        accountRepository.resetAccount(accountId, new BigDecimal("10000.00"), "USD");
     }
+
 }
