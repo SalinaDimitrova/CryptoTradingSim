@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,7 +179,7 @@ public class OrderService {
     }
 
     private void comparePrices(BigDecimal backendPrice, BigDecimal frontendPrice) {
-        BigDecimal tolerance = new BigDecimal("0.1");
+        BigDecimal tolerance = new BigDecimal("2.0");
         BigDecimal difference = frontendPrice.subtract(backendPrice).abs();
 
         if (difference.compareTo(tolerance) > 0) {
@@ -236,8 +235,6 @@ public class OrderService {
 
         for (Order order : buyOrders) {
             if (remainingSellOrderQuantity.compareTo(BigDecimal.ZERO) <= 0) {
-                // This buy order was not used to fulfill any previous sells,
-                // so it's fully available for current matching
                 activeBuyOrders.add(order);
                 continue;
             }

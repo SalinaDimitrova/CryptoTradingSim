@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record Order(
-    int orderId,
+    long orderId,
     long accountId,
     String symbol,
     BigDecimal quantity,

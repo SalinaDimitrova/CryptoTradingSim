@@ -5,10 +5,10 @@ import BuySellForm from '../components/BuySellForm';
 const demoAccountId = 1;
 
 const trackedSymbols = [
-  "BTC/USD", "ETH/USD", "BNB/USD", "XRP/USD", "ADA/USD",
+  "BTC/USD", "ETH/USD", "USDT/USD", "XRP/USD", "ADA/USD",
   "DOGE/USD", "SOL/USD", "DOT/USD", "MATIC/USD", "LTC/USD",
   "SHIB/USD", "AVAX/USD", "UNI/USD", "XLM/USD", "BCH/USD",
-  "ALGO/USD", "VET/USD", "ICP/USD", "MANA/USD", "AXS/USD"
+  "ALGO/USD", "TRX/USD", "ICP/USD", "MANA/USD", "AXS/USD"
 ];
 
 const Home = ({ prices }) => {
@@ -54,7 +54,7 @@ const Home = ({ prices }) => {
               >
                 <td className="px-6 py-4">{formatName(pair)}</td>
                 <td className="px-6 py-4">
-                  {prices[pair] ? `$${prices[pair].toFixed(2)}` : 'Loading...'}
+                  {prices[pair] ? `$${prices[pair].toFixed(8)}` : 'Loading...'}
                 </td>
               </tr>
             ))}
