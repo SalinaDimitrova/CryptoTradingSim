@@ -3,7 +3,7 @@ package com.cryptotradingsim.cryptotradingsim.model;
 import java.math.BigDecimal;
 
 public record Portfolio(
-        int id,
+        long id,
         String symbol,
         BigDecimal quantity
 ){}

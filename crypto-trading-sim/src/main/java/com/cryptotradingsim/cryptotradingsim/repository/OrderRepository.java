@@ -93,20 +93,6 @@ public class OrderRepository {
         namedParameterJdbcTemplate.update(sql, params);
     }
 
-    public List<Order> getBuyOrdersBySymbol(String symbol) {
-        String sql = """
-            SELECT * FROM orders
-            WHERE type = :type AND symbol = :symbol
-        """;
-
-        Map<String, Object> params = Map.of(
-                "type", OrderType.BUY.name(),
-                "symbol", symbol
-        );
-
-        return namedParameterJdbcTemplate.query(sql, params, orderRowMapper);
-    }
-
     private static final RowMapper<Order> orderRowMapper = new RowMapper<>() {
         @Override
         public Order mapRow(ResultSet rs, int rowNum) throws SQLException {
