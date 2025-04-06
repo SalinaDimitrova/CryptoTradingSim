@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const demoAccountId = 1;
+
 const History = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/accounts/orders')
+    axios.get(`/api/accounts/${demoAccountId}/orders`)
       .then((res) => setOrders(res.data))
       .catch((err) => console.error("Failed to load orders:", err));
   }, []);

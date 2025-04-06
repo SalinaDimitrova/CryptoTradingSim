@@ -27,9 +27,15 @@ const Home = () => {
 
         const data = JSON.parse(message.body);
 
-        if (data.symbol && data.last) {
-          const pair = data.symbol;
-          setPrices(prev => ({ ...prev, [pair]: parseFloat(data.last) }));
+        if (Array.isArray(data)) {
+          const updatedPrices = data.reduce((acc, item) => {
+            if (item.symbol && item.last !== undefined) {
+              acc[item.symbol] = parseFloat(item.last);
+            }
+            return acc;
+          }, {});
+  
+          setPrices(prev => ({ ...prev, ...updatedPrices }));
         }
       });
     });

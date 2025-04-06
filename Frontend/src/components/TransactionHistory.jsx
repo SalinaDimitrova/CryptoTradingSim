@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+const demoAccountId = 1;
+
 const TransactionHistory = ({ refreshFlag }) => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios.get("/api/accounts/orders")
+    axios.get(`/api/accounts/${demoAccountId}/orders`)
       .then(res => {
         console.log("Orders fetched:", res.data);
         setOrders(res.data);
