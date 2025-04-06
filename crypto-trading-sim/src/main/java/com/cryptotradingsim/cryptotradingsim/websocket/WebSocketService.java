@@ -14,7 +14,6 @@ public class WebSocketService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    // This method will send price updates to all connected clients
     public void sendPriceUpdate(String cryptoSymbol, String price) {
         messagingTemplate.convertAndSend("/topic/price-update/" + cryptoSymbol, price);
     }

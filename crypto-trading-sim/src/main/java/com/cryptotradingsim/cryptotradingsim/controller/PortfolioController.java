@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/portfolio")
+@RequestMapping("/portfolios")
 public class PortfolioController {
 
     private final PortfolioService portfolioService;
@@ -22,7 +22,7 @@ public class PortfolioController {
         return ResponseEntity.ok(portfolioService.getAllHoldings());
     }
 
-    @GetMapping("/symbol/{symbol}")
+    @GetMapping("/symbols/{symbol}")
     public ResponseEntity<Portfolio> getBySymbol(@PathVariable String symbol) {
         return ResponseEntity.ok(portfolioService.getBySymbol(symbol));
     }
