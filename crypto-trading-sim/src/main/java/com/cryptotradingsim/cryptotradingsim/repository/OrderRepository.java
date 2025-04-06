@@ -1,10 +1,13 @@
 package com.cryptotradingsim.cryptotradingsim.repository;
 
+import com.cryptotradingsim.cryptotradingsim.model.OrderRequest;
 import com.cryptotradingsim.cryptotradingsim.model.OrderStatus;
 import com.cryptotradingsim.cryptotradingsim.model.OrderType;
 import com.cryptotradingsim.cryptotradingsim.model.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -12,14 +15,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public class OrderRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public OrderRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public OrderRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     private final RowMapper<Order> orderRowMapper = new RowMapper<>() {
@@ -42,48 +46,57 @@ public class OrderRepository {
         }
     };
 
-    public void saveOrder(Order order) {
+    public void saveOrder(long accountId, OrderRequest order, BigDecimal currentPrice) {
         String sql = """
-            INSERT INTO orders (account_id, type, symbol, quantity, price, status, time_ordered, time_executed, profit_loss)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO orders (account_id, type, symbol, quantity, price, status, time_ordered)
+            VALUES (:accountId, :type, :symbol, :quantity, :price, :status, :timeOrdered)
         """;
-        jdbcTemplate.update(sql,
-                order.accountId(),
-                order.type().name(),
-                order.symbol(),
-                order.quantity(),
-                order.price(),
-                order.status().name(),
-                order.timeOrdered(),
-                order.timeExecuted(),
-                order.profitLoss()
-        );
+
+
+        namedParameterJdbcTemplate.update(sql, Map.of("accountId", accountId,
+                                        "type", order.type().name(), "symbol", order.symbol(),
+                                        "quantity", order.quantity(), "price", currentPrice,
+                                        "status", OrderStatus.ORDERED.name(), "timeOrdered", LocalDateTime.now()));
     }
 
     public List<Order> getAllOrders() {
         String sql = "SELECT * FROM orders ORDER BY time_ordered DESC";
-        return jdbcTemplate.query(sql, orderRowMapper);
+        return namedParameterJdbcTemplate.query(sql, orderRowMapper);
     }
 
     public List<Order> getOrdersByAccountId(long accountId) {
-        String sql = "SELECT * FROM orders WHERE account_id = ? ORDER BY time_ordered DESC";
-        return jdbcTemplate.query(sql, orderRowMapper, accountId);
+        String sql = "SELECT * FROM orders WHERE account_id = :account_id ORDER BY time_ordered DESC";
+        Map<String, Object> params = Map.of("account_id", accountId);
+        return namedParameterJdbcTemplate.query(sql, params, orderRowMapper);
     }
 
     public void markOrderExecuted(int orderId, LocalDateTime executedAt) {
         String sql = """
             UPDATE orders
-            SET status = ?, time_executed = ?
-            WHERE id = ?
+            SET status = :status, time_executed = :executed_at
+            WHERE id = :order_id
         """;
-        jdbcTemplate.update(sql, OrderStatus.EXECUTED.name(), executedAt, orderId);
+
+        Map<String, Object> params = Map.of(
+                "status", OrderStatus.EXECUTED.name(),
+                "executed_at", executedAt,
+                "order_id", orderId
+        );
+
+        namedParameterJdbcTemplate.update(sql, params);
     }
 
     public List<Order> getBuyOrdersBySymbol(String symbol) {
         String sql = """
             SELECT * FROM orders
-            WHERE type = ? AND symbol = ?
+            WHERE type = :type AND symbol = :symbol
         """;
-        return jdbcTemplate.query(sql, orderRowMapper, OrderType.BUY.name(), symbol);
+
+        Map<String, Object> params = Map.of(
+                "type", OrderType.BUY.name(),
+                "symbol", symbol
+        );
+
+        return namedParameterJdbcTemplate.query(sql, params, orderRowMapper);
     }
 }

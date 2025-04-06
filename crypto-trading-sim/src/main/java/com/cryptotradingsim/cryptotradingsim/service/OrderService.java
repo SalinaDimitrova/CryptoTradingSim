@@ -4,8 +4,9 @@ import com.cryptotradingsim.cryptotradingsim.model.OrderStatus;
 import com.cryptotradingsim.cryptotradingsim.model.OrderType;
 import com.cryptotradingsim.cryptotradingsim.model.*;
 import com.cryptotradingsim.cryptotradingsim.repository.OrderRepository;
-import com.cryptotradingsim.cryptotradingsim.repository.AccountRepository;
+import com.cryptotradingsim.cryptotradingsim.service.AccountService;
 import com.cryptotradingsim.cryptotradingsim.repository.PortfolioRepository;
+import com.cryptotradingsim.cryptotradingsim.websocket.KrakenWebSocketService;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,54 +16,68 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final AccountRepository accountRepository;
+    private final AccountService accountService;
     private final PortfolioRepository portfolioRepository;
+    private final KrakenWebSocketService krakenWebSocketService;
 
     public OrderService(OrderRepository orderRepository,
-                        AccountRepository accountRepository,
-                        PortfolioRepository portfolioRepository) {
+                        AccountService accountService,
+                        PortfolioRepository portfolioRepository, KrakenWebSocketService krakenWebSocketService) {
         this.orderRepository = orderRepository;
-        this.accountRepository = accountRepository;
+        this.accountService = accountService;
         this.portfolioRepository = portfolioRepository;
+        this.krakenWebSocketService = krakenWebSocketService;
     }
 
-    public void placeOrder(long accountId, OrderType orderType, String symbol, BigDecimal quantity, BigDecimal frontendPrice) {
-        Account account = accountRepository.getAccount();
-        BigDecimal backendPrice = getBackendPrice(symbol); // Fetch price from BE
-        comparePrices(backendPrice, frontendPrice); // Compare BE & FE prices
+    public void placeOrder(long accountId, OrderRequest order) {
 
-        BigDecimal cost = backendPrice.multiply(quantity);
-        OrderStatus status = processOrder(orderType, account, symbol, quantity, backendPrice, cost);
-        saveOrder(accountId, orderType, symbol, quantity, backendPrice, status);
+        BigDecimal backendPrice = krakenWebSocketService.getPriceForTicker(order.symbol());
+        BigDecimal cost = backendPrice.multiply(order.quantity());
+        BigDecimal accountBalance = accountService.getAccount(accountId).balance();
+
+        validateOrder(order, backendPrice, accountId, cost, accountBalance);
+
+        OrderStatus status = processOrder(order, accountId, accountBalance, backendPrice, cost);
+        saveOrder(accountId, order.type(), order.symbol(), order.quantity(), backendPrice, status);
     }
 
-    private OrderStatus processOrder(OrderType orderType, Account account, String symbol, BigDecimal quantity, BigDecimal backendPrice, BigDecimal cost) {
+    private void validateOrder(OrderRequest order, BigDecimal currentPrice, long accountId, BigDecimal cost, BigDecimal accountBalance)
+    {
+        comparePrices(currentPrice, order.price());
+
+        if(accountBalance.compareTo(cost) < 0)
+        {
+            throw new RuntimeException("Insufficient balance");
+        }
+    }
+
+    private OrderStatus processOrder(OrderRequest order, long accountId, BigDecimal accountBalance, BigDecimal backendPrice, BigDecimal cost) {
         boolean success = false;
 
-        if (orderType == OrderType.BUY) {
-            success = processBuyOrder(account, symbol, quantity, cost);
-        } else if (orderType == OrderType.SELL) {
-            success = processSellOrder(account, symbol, quantity, backendPrice);
+        if (order.type() == OrderType.BUY) {
+            success = processBuyOrder(accountId, accountBalance, order.symbol(), order.quantity(), cost);
+        } else if (order.type() == OrderType.SELL) {
+            success = processSellOrder(accountId, accountBalance, order.symbol(), order.quantity(), backendPrice);
         }
 
         return success ? OrderStatus.EXECUTED : OrderStatus.FAILED;
     }
 
-    private boolean processBuyOrder(Account account, String symbol, BigDecimal quantity, BigDecimal cost) {
-        if (account.balance().compareTo(cost) >= 0) {
-            accountRepository.updateBalance(account.id(), account.balance().subtract(cost));
+    private boolean processBuyOrder(long accountId, BigDecimal accountBalance, String symbol, BigDecimal quantity, BigDecimal cost) {
+        if (accountBalance.compareTo(cost) >= 0) {
+            accountService.updateBalance(accountId, accountBalance.subtract(cost));
             updatePortfolio(symbol, quantity);
             return true;
         }
         return false;
     }
 
-    private boolean processSellOrder(Account account, String symbol, BigDecimal quantity, BigDecimal price) {
+    private boolean processSellOrder(long accountId, BigDecimal accountBalance, String symbol, BigDecimal quantity, BigDecimal price) {
         try {
             Portfolio existing = portfolioRepository.findBySymbol(symbol);
             if (existing.quantity().compareTo(quantity) >= 0) {
                 BigDecimal gain = quantity.multiply(price);
-                accountRepository.updateBalance(account.id(), account.balance().add(gain));
+                accountService.updateBalance(accountId, accountBalance.add(gain));
                 updatePortfolioAfterSale(symbol, existing, quantity);
                 return true;
             }
@@ -92,30 +107,22 @@ public class OrderService {
     }
 
     private void saveOrder(long accountId, OrderType orderType, String symbol, BigDecimal quantity, BigDecimal backendPrice, OrderStatus status) {
-        Order order = new Order(
-                0,
-                accountId,
+        OrderRequest order = new OrderRequest(
                 symbol,
                 quantity,
                 backendPrice,
-                orderType,
-                status,
-                LocalDateTime.now(),
-                status == OrderStatus.EXECUTED ? LocalDateTime.now() : null,
-                null
+                orderType
         );
 
-        orderRepository.saveOrder(order);
-    }
-
-    private BigDecimal getBackendPrice(String symbol) {
-        // Simulated backend price retrieval
-        return BigDecimal.valueOf(100);
+        orderRepository.saveOrder(accountId, order, backendPrice);
     }
 
     private void comparePrices(BigDecimal backendPrice, BigDecimal frontendPrice) {
-        if (frontendPrice.compareTo(backendPrice) != 0) {
-            System.out.println("⚠️ Warning: Frontend price (" + frontendPrice + ") differs from backend price (" + backendPrice + ")");
+        BigDecimal tolerance = new BigDecimal("0.01");
+        BigDecimal difference = frontendPrice.subtract(backendPrice).abs();
+
+        if (difference.compareTo(tolerance) > 0) {
+            System.out.println("⚠️ Warning: Frontend price (" + frontendPrice + ") differs from backend price (" + backendPrice + ") by more than " + tolerance);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.cryptotradingsim.cryptotradingsim.controller;
 
 import com.cryptotradingsim.cryptotradingsim.model.Order;
+import com.cryptotradingsim.cryptotradingsim.model.OrderRequest;
 import com.cryptotradingsim.cryptotradingsim.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/accounts/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -19,24 +20,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getAllOrders() {
-        return orderService.getAllOrders();
-    }
-
-    @GetMapping("/accounts/{accountId}")
-    public List<Order> getOrdersByAccount(@PathVariable long accountId) {
-        return orderService.getOrdersByAccountId(accountId);
+    public List<Order> getOrdersByAccount() {
+        return orderService.getOrdersByAccountId(1);
     }
 
     @PostMapping
-    public ResponseEntity<String> placeOrder(@RequestBody Order order) {
-        orderService.placeOrder(
-                order.accountId(),
-                order.type(),
-                order.symbol(),
-                order.quantity(),
-                order.price()
-        );
+    public ResponseEntity<String> placeOrder(
+            @RequestBody OrderRequest order) {
+        orderService.placeOrder(1, order);
         return ResponseEntity.status(HttpStatus.CREATED).body("Order placed successfully");
     }
 

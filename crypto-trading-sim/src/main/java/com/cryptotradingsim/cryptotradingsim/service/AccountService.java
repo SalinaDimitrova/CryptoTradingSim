@@ -15,12 +15,16 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
-    public Account getAccount() {
-        return accountRepository.getAccount();
+    public Account getAccount(long accountId) {
+        return accountRepository.getAccount(accountId);
     }
 
-    public void resetAccount() {
-        accountRepository.resetAccount(
+    public void updateBalance(long accountId, BigDecimal newBalance) {
+        accountRepository.updateBalance(accountId, newBalance);
+    }
+
+    public void resetAccount(long accountId) {
+        accountRepository.resetAccount( accountId,
                 new BigDecimal("10000.00"),
                 "USD"
         );
