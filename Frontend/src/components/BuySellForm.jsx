@@ -2,16 +2,15 @@
 import { useState } from 'react';
 import axios from 'axios';
 
+
 const BuySellForm = ({ symbol, price, accountId, onOrderPlaced }) => {
   const [quantity, setQuantity] = useState('');
   const [type, setType] = useState('BUY');
 
-  const id = accountId
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/accounts/orders', 
+      await axios.post(`/api/accounts/${accountId}/orders`, 
       {
         symbol,
         price,

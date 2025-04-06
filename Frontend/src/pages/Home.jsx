@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import SockJS from 'sockjs-client';
-import { CompatClient, Stomp } from '@stomp/stompjs';
+// pages/Home.jsx
+import { useState } from 'react';
 import BuySellForm from '../components/BuySellForm';
 
 const demoAccountId = 1;
@@ -12,32 +11,8 @@ const trackedSymbols = [
   "ALGO/USD", "VET/USD", "ICP/USD", "MANA/USD", "AXS/USD"
 ];
 
-const Home = () => {
-  const [prices, setPrices] = useState({});
+const Home = ({ prices }) => {
   const [selectedCrypto, setSelectedCrypto] = useState(null);
-  const stompClientRef = useRef(/** @type {CompatClient | null} */(null));
-
-  useEffect(() => {
-    const socket = new SockJS('http://localhost:8080/ws'); // Spring Boot WebSocket endpoint
-    const stompClient = Stomp.over(socket);
-    stompClientRef.current = stompClient;
-
-    stompClient.connect({}, () => {
-      stompClient.subscribe('/topic/prices', (message) => {
-
-        const data = JSON.parse(message.body);
-
-        if (data.symbol && data.last) {
-          const pair = data.symbol;
-          setPrices(prev => ({ ...prev, [pair]: parseFloat(data.last) }));
-        }
-      });
-    });
-
-    return () => {
-      stompClient.disconnect();
-    };
-  }, []);
 
   const formatName = (pair) => {
     const name = pair.split('/')[0];
@@ -52,15 +27,6 @@ const Home = () => {
       <p className="text-gray-400 text-lg mb-10 text-center max-w-2xl mx-auto">
         Start investing with real-time insights and no hidden fees.
       </p>
-
-      <div className="text-center mb-10">
-        <button
-          onClick={() => document.getElementById('crypto-table')?.scrollIntoView({ behavior: 'smooth' })}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-full text-lg font-semibold transition duration-300 ease-in-out shadow-lg hover:shadow-xl"
-        >
-          🚀 Start Trading
-        </button>
-      </div>
 
       <div id="crypto-table" className="overflow-x-auto shadow-lg rounded-lg bg-white mb-8 text-gray-800">
         <table className="min-w-full text-sm text-left">

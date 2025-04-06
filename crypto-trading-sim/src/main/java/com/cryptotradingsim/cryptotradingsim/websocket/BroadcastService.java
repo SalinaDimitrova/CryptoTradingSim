@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+
 @Service
 public class BroadcastService {
 
@@ -17,8 +21,16 @@ public class BroadcastService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    public void broadcastPriceUpdate(CryptoPrice cryptoPrice) {
-        messagingTemplate.convertAndSend("/topic/prices", cryptoPrice);
-        logger.info("Broadcasted price update: " + cryptoPrice.toString());
+    public void broadcastPrices(Map<String, BigDecimal> cryptoPrices) {
+
+        List<CryptoPrice> prices = cryptoPrices.entrySet()
+                                                .stream()
+                                                .map(entry ->
+                                                        new CryptoPrice(entry.getKey(),
+                                                        entry.getValue()))
+                                                .toList();
+
+        messagingTemplate.convertAndSend("/topic/prices", prices);
+        logger.info("Broadcasted price update: " + prices);
     }
 }

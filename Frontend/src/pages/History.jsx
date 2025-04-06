@@ -2,11 +2,13 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const demoAccountId = 1;
+
 const History = () => {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    axios.get('/api/accounts/orders')
+    axios.get(`/api/accounts/${demoAccountId}/orders`)
       .then((res) => setOrders(res.data))
       .catch((err) => console.error("Failed to load orders:", err));
   }, []);
@@ -27,7 +29,7 @@ const History = () => {
 
         <div className="overflow-x-auto bg-white text-gray-800 rounded-lg shadow-lg">
           <table className="min-w-full text-sm text-left">
-            <thead className="bg-teal-600 text-white">
+            <thead className="bg-blue-600 text-white">
               <tr>
                 <th className="px-6 py-3">Date</th>
                 <th className="px-6 py-3">Type</th>

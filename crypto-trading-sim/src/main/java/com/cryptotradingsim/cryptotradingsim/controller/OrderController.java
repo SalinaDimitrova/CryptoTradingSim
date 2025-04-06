@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/accounts/orders")
+@RequestMapping("/accounts/{accountId}/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -20,20 +20,15 @@ public class OrderController {
     }
 
     @GetMapping
-    public List<Order> getOrdersByAccount() {
-        return orderService.getOrdersByAccountId(1);
+    public List<Order> getOrdersByAccount(@PathVariable long accountId) {
+        return orderService.getOrdersByAccountId(accountId);
     }
 
     @PostMapping
-    public ResponseEntity<String> placeOrder(
-            @RequestBody OrderRequest order) {
-        orderService.placeOrder(1, order);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Order placed successfully");
-    }
-
-    @PostMapping("/{id}/execute")
-    public ResponseEntity<String> executeOrder(@PathVariable int id) {
-        orderService.executeOrder(id);
-        return ResponseEntity.ok("Order executed");
+    public ResponseEntity<String> placeOrder(@PathVariable long accountId,
+                                             @RequestBody OrderRequest order) {
+        orderService.placeOrder(accountId, order);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                             .body("Order placed successfully");
     }
 }

@@ -20,15 +20,15 @@ public class PortfolioService {
     }
 
     public Portfolio getBySymbol(String symbol) {
-        return portfolioRepository.findBySymbol(symbol);
+        return portfolioRepository.findBySymbol(symbol).orElseThrow();
     }
 
     public void updateHolding(String symbol, double quantity) {
         portfolioRepository.updateHolding(symbol, quantity);
     }
 
-    public void insertHolding(String symbol, double quantity) {
-        portfolioRepository.insertHolding(symbol, quantity);
+    public void insertHolding(long accountId, String symbol, double quantity) {
+        portfolioRepository.insertHolding(accountId, symbol, quantity);
     }
 
     public void deleteHolding(String symbol) {
