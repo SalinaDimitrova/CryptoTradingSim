@@ -1,7 +1,6 @@
 package com.cryptotradingsim.cryptotradingsim.websocket;
 
-import com.cryptotradingsim.cryptotradingsim.model.CryptoPrice;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.cryptotradingsim.cryptotradingsim.model.WebSocketMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.util.StringUtils;
 import jakarta.annotation.PostConstruct;
@@ -13,18 +12,15 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @ClientEndpoint
 @Service
 public class KrakenWebSocketService {
 
-    private static final Logger logger = LoggerFactory.getLogger(KrakenWebSocketService.class);
-    private static final String DATA_JSON_PATH = "data";
-    private static final String SYMBOL_JSON_PATH = "symbol";
-    private static final String LAST_PRICE_JSON_PATH = "last";
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String krakenWebSocketUrl;
     private final ObjectMapper objectMapper;
@@ -66,32 +62,33 @@ public class KrakenWebSocketService {
 
     @OnMessage
     public void onMessage(String message) {
+
         try {
-            System.out.println("Message received: " + message);
-            JsonNode jsonNode = objectMapper.readTree(message);
-            JsonNode dataNode = jsonNode.path(DATA_JSON_PATH);
+            logger.info("Received message from Kraken WebSocket: {}", message);
+            WebSocketMessage payload = objectMapper.readValue(message, WebSocketMessage.class);
 
-            if (dataNode.isArray() && dataNode.size() > 0) {
-                JsonNode firstData = dataNode.get(0);
+            if(payload.data() == null){
+                return;}
 
-                String symbol = firstData.path(SYMBOL_JSON_PATH).asText(null);
-                BigDecimal lastPrice = new BigDecimal(firstData.path(LAST_PRICE_JSON_PATH).asText());
+            payload.data()
+                    .stream()
+                    .map(Optional::ofNullable)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(priceUpdate ->
+                            !StringUtils.isBlank(priceUpdate.symbol()) &&
+                                    BigDecimal.ZERO.compareTo(priceUpdate.price()) < 0)
+                    .forEach(data -> {
+                        cryptoPrices.put(data.symbol(), data.price());
+                        broadcastService.broadcastPrices(cryptoPrices);
+                    });
 
-                if (!StringUtils.isBlank(symbol) &&
-                        BigDecimal.ZERO.compareTo(lastPrice) > 0) {
-                    String normalizedSymbol = symbol.replace("/USD", "");
-                    cryptoPrices.put(normalizedSymbol, lastPrice);
-                    logger.info("Updated price for {}: {}", normalizedSymbol, lastPrice);
-
-                    broadcastService.broadcastPriceUpdate(new CryptoPrice(normalizedSymbol, lastPrice));
-                }
-            }
         } catch (Exception e) {
             logger.warn("Error processing WebSocket message", e);
         }
     }
 
-    public Map<String, BigDecimal> getCryptoPrices() {
-        return Collections.unmodifiableMap(cryptoPrices);
+    public BigDecimal getPriceForTicker(String symbol) {
+        return cryptoPrices.get(symbol);
     }
 }

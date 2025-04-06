@@ -2,22 +2,27 @@ package com.cryptotradingsim.cryptotradingsim.repository;
 
 import com.cryptotradingsim.cryptotradingsim.model.Account;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Repository
 public class AccountRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public AccountRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public AccountRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
-    public Account getAccount() {
-        String sql = "SELECT * FROM account WHERE id = 1";
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new Account(
+    public Account getAccount(long accountId) {
+        String sql = "SELECT * FROM account WHERE id = :accountId";
+
+        return namedParameterJdbcTemplate.queryForObject(sql,
+                Map.of("accountId", accountId),
+                (rs, rowNum) -> new Account(
                 rs.getLong("id"),
                 rs.getString("first_name"),
                 rs.getString("last_name"),
@@ -28,12 +33,15 @@ public class AccountRepository {
     }
 
     public void updateBalance(long id, BigDecimal newBalance) {
-        String sql = "UPDATE account SET balance = ? WHERE id = ?";
-        jdbcTemplate.update(sql, newBalance, id);
+        String sql = "UPDATE account SET balance = :balance WHERE id = :accountId";
+        namedParameterJdbcTemplate.update(sql, Map.of("balance", newBalance, "accountId", id));
     }
 
-    public void resetAccount(BigDecimal balance, String currency) {
-        String sql = "UPDATE account SET balance = ?, currency = ? WHERE id = 1";
-        jdbcTemplate.update(sql, balance, currency);
+    public void resetAccount(long accountId, BigDecimal balance, String currency) {
+        String sql = "UPDATE account SET balance = :balance, currency = :currency WHERE id = :accountId";
+        namedParameterJdbcTemplate.update(sql,
+                Map.of("balance", balance,
+                "currency", currency,
+                "accountId", accountId));
     }
 }

@@ -1,21 +1,23 @@
-// components/BuySellForm.jsx
+// BuySellForm.jsx
 import { useState } from 'react';
 import axios from 'axios';
 
-const BuySellForm = ({ symbol = '', price = '', onOrderPlaced }) => {
+
+const BuySellForm = ({ symbol, price, accountId, onOrderPlaced }) => {
   const [quantity, setQuantity] = useState('');
-  const [type, setType] = useState('Buy');
+  const [type, setType] = useState('BUY');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/orders', {
+      await axios.post(`/api/accounts/${accountId}/orders`, 
+      {
         symbol,
         price,
         quantity: parseFloat(quantity),
         type,
       });
-      onOrderPlaced?.();
+      onOrderPlaced();
     } catch (err) {
       console.error("Order failed:", err);
     }
@@ -48,8 +50,8 @@ const BuySellForm = ({ symbol = '', price = '', onOrderPlaced }) => {
         onChange={(e) => setType(e.target.value)}
         className="w-full px-4 py-3 rounded-lg bg-white border border-gray-300 text-gray-800"
       >
-        <option>Buy</option>
-        <option>Sell</option>
+         <option value="BUY">BUY</option>
+         <option value="SELL">SELL</option>
       </select>
 
       <button
