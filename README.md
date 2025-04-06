@@ -62,20 +62,25 @@ git clone https://github.com/SalinaDimitrova/CryptoTradingSim
 cd CryptoTradingSim
 ```
 ---
+
 ## 🔙 Backend Setup
 
 1. **Navigate to the backend directory**:
 ```bash
  cd crypto-trading-sim
+
 ```
+
 2. **Build the project using Maven**:
   ```bash
 ./mvnw clean install
+
   ```
 
 3. **Run the application**:
   ```bash
 ./mvnw spring-boot:run
+
   ```
 Or run the CryptoTradingSimApplication.java class from your IDE.
 
@@ -93,16 +98,19 @@ Follow these steps to run the frontend locally:
 1. Navigate to the frontend directory:
   ```bash
   cd frontend
+
 ```
 
 2. Install project dependencies:
   ```bash
   npm install
+
 ```
 
 3. Start the development server:
 ```bash
   npm run dev
+
 ```
 
 ## ⚙️ System Overview
@@ -121,113 +129,111 @@ Below are the available REST API endpoints for interacting with accounts, orders
 #### 1. Get Account Details
 - **Endpoint**: `/accounts/{accountId}`
 - **Method**: `GET`
-- **Description**: Retrieves account information such as balance and ID.
-- **Response**:  
+- **Description**: Retrieves full account details for a given account ID.
+- **Response**:
   ```json
   {
     "id": 1,
-    "balance": 10000.0
+    "firstName": "Alice",
+    "lastName": "Doe",
+    "email": "alice@example.com",
+    "balance": 10000.00,
+    "currency": "USD"
   }
   
 #### 2. Reset Account
-Endpoint: `/accounts/{accountId}/reset`
-
-Method: `POST`
-
-Description: Resets the specified account to its default state (balance and data).
-
-Response:
-  ```json
+- **Endpoint**: `/accounts/{accountId}/reset`
+- **Method**: `POST`
+- **Description**: Resets the specified account to its default state (balance and data).
+- **Response**:
+ ```json
 "Account reset to default balance."
+
 ```
+
 ### 💱 Order Endpoints
 #### 3. Place Order (Buy/Sell)
-Endpoint: `/accounts/{accountId}/orders`
-
-Method: `POST`
-
-Description: Places a buy or sell order for a cryptocurrency.
-
-Request Body:
-  ```json
+- **Endpoint**: `/accounts/{accountId}/orders`
+- **Method**: `POST`
+- **Description**: Places a buy or sell order for a cryptocurrency.
+- **Request Body**:
+```json
 {
   "symbol": "BTC/USD",
   "amount": 0.5,
   "type": "BUY" // or "SELL"
 }
 ```
-Response:
-  ```json
+- **Response**:
+```json
 "Order placed successfully"
+
 ```
+
 #### 4. Get All Orders
-Endpoint: `/accounts/{accountId}/orders`
-
-Method: `GET`
-
-Description: Fetches all orders (buy and sell) for the given account.
-
-Response:
+- **Endpoint**: `/accounts/{accountId}/orders`
+- **Method**: `GET`
+- **Description**: Fetches all orders (buy and sell) for the given account.
+- **Response**:
 ```json
 [
   {
+    "orderId": 101,
+    "accountId": 1,
     "symbol": "BTC/USD",
-    "amount": 0.5,
-    "price": 38000.0,
-    "type": "BUY"
-  },
-  {
-    "symbol": "ETH/USD",
-    "amount": 1.2,
-    "price": 2400.0,
-    "type": "SELL"
+    "quantity": 0.5,
+    "price": 38000.00,
+    "type": "BUY",
+    "status": "EXECUTED",
+    "timeOrdered": "2024-04-01T14:32:00",
+    "timeExecuted": "2024-04-01T14:32:10",
+    "profitLoss": null
   }
 ]
+
 ```
 ### 📊 Portfolio Endpoints
 #### 5. Get All Holdings
-Endpoint: `/portfolios`
-
-Method: `GET`
-
-Description: Returns the current holdings of all cryptocurrencies.
-
-Response:
+- **Endpoint**: `/portfolios`
+- **Method**: `GET`
+- **Description**: Returns the current holdings of all cryptocurrencies.
+- **Response**:
 ```json
 [
   {
+    "id": 1,
     "symbol": "BTC",
-    "amount": 0.5
+    "quantity": 0.5
   },
   {
+    "id": 2,
     "symbol": "ETH",
-    "amount": 2.0
+    "quantity": 1.2
   }
 ]
+
 ```
+
 #### 6. Get Holding by Symbol
-Endpoint: `/portfolios/symbols/{symbol}`
-
-Method: `GET`
-
-Description: Fetches the amount held for a specific cryptocurrency symbol.
-
-Response:
+- **Endpoint**: `/portfolios/symbols/{symbol}`
+- **Method**: `GET`
+- **Description**: Fetches the amount held for a specific cryptocurrency symbol.
+- **Response**:
 ```json
 {
+  "id": 1,
   "symbol": "BTC",
-  "amount": 0.5
+  "quantity": 0.5
 }
+
 ```
+
 ### 💸 Price Endpoints
 #### 7. Get All Live Prices (To be added via controller)
-Endpoint: `/api/prices`
-
-Method: `GET`
-
-Description: Returns the latest prices for all tracked cryptocurrencies.
-
-Response:
+- **Endpoint**: `/api/prices`
+- **Method**: `GET`
+- **Description**: Returns the latest prices for all tracked cryptocurrencies.
+- **Response**:
 ```json
 {
   "BTC/USD": 38250.25,
@@ -239,11 +245,9 @@ Response:
 The backend streams real-time cryptocurrency prices from Kraken using STOMP over WebSocket.
 
 #### WebSocket Info
-WebSocket Endpoint: `ws://localhost:8080/ws`
-
-Subscribe to Topic: `/topic/prices`
-
-Send Message To: `/app/subscribe (optional, e.g., with payload "BTC/USD")`
+- **WebSocket Endpoint**: `ws://localhost:8080/ws`
+- **Subscribe to Topic**: `/topic/prices`
+- **Send Message To**: `/app/subscribe (optional, e.g., with payload "BTC/USD")`
 
 #### 📥 Example Message from /topic/prices:
 ```json
@@ -257,14 +261,13 @@ Send Message To: `/app/subscribe (optional, e.g., with payload "BTC/USD")`
     "price": 2470.30
   }
 ]
+
 ```
 >Messages are broadcast as soon as price data is received from Kraken.
 
 ## 🖼️ Screenshots & Demo
 
 ### 🧊 Initial Screen – Top 20 Cryptocurrency Prices
-
-![Top 20 Prices](./assets/home-screen.png)
 ![image](https://github.com/user-attachments/assets/341adf23-4dec-4dc8-8673-bc8b7b81c06f)
 
 ---
