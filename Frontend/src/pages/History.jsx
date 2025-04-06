@@ -29,7 +29,7 @@ const History = () => {
 
         <div className="overflow-x-auto bg-white text-gray-800 rounded-lg shadow-lg">
           <table className="min-w-full text-sm text-left">
-            <thead className="bg-teal-600 text-white">
+            <thead className="bg-blue-600 text-white">
               <tr>
                 <th className="px-6 py-3">Date</th>
                 <th className="px-6 py-3">Type</th>
